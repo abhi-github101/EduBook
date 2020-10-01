@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBook</title>
+    <style type="text/css">
+        body div {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div>TASK 1: Create Exam</div>
+        <label for="createExamTxt">Exam: </label>
+        <input id="createExamTxt" type="text" required>
+        <button onclick="createExam()">Create Exam</button>
+        <div id="createExamResult"></div>
+    </div>
+    <hr />
+    <div>
+        <div>TASK 2: Get Exams List</div>
+        <button onclick="getExamsList()">Get Exams List</button>
+        <div id="getExamsListResult"></div>
+    </div>
+    <hr />
+    <div>
+        <div>TASK 3: Add Category</div>
+        <div>
+            <label for="addCategoryTxt">Category: </label>
+            <input id="addCategoryTxt" type="text" required>
+        </div>
+        <div>
+            <label for="attachCategoryTxt">Attach To: </label>
+            <input id="attachCategoryTxt" type="text" required>
+            <span>Hint: Name of another Category or Exam</span>
+        </div>
+        <button onclick="addCategory()">Add Category</button>
+        <div id="addCategoryResult"></div>
+    </div>
+    <hr />
+    <div>
+        <div>TASK 3: Add Subject</div>
+        <div>
+            <label for="addSubjectTxt">Subject: </label>
+            <input id="addSubjectTxt" type="text" required>
+        </div>
+        <div>
+            <label for="attachSubjectTxt">Attach To: </label>
+            <input id="attachSubjectTxt" type="text" required>
+            <span>Hint: Name of lowest-level Category or Exam without Category</span>
+        </div>
+        <button onclick="addSubject()">Add Subject</button>
+        <div id="addSubjectResult"></div>
+    </div>
+    <hr />
+    <div>
+        <div>TASK 3: Add Topic</div>
+        <div>
+            <label for="addTopicTxt">Topic: </label>
+            <input id="addTopicTxt" type="text" required>
+        </div>
+        <div>
+            <label for="attachTopicTxt">Attach To: </label>
+            <input id="attachTopicTxt" type="text" required>
+            <span>Hint: Name of another Topic or Subject</span>
+        </div>
+        <button onclick="addTopic()">Add Topic</button>
+        <div id="addTopicResult"></div>
+    </div>
+    <hr />
+    <div>
+        <div>TASK 4: Get Exams Details</div>
+        <label for="getExamDetailsTxt">Exam: </label>
+        <input id="getExamDetailsTxt" type="text" required>
+        <button onclick="getExamDetails()">Get Exam Details</button>
+        <span>Note: Not fully implemented.</span>
+        <div id="getExamDetailsResult"></div>
+    </div>
+
+    <!-- Scripts-->
+    <script src="/static/jquery.min.js"></script>
+    <script type="text/javascript">
+        var hostUrl = "http://127.0.0.1:8000/exams/";
+
+        function createExam() {
+            let url = hostUrl + "createexam/";
+            let exam = $("#createExamTxt").val();
+            if (exam !== "" && exam !== undefined) {
+                $.post(url, { 'exam': exam }, (data, status) => {
+                    console.log("Data: " + data + " | Status: " + status);
+                    $("#createExamResult").html("Exam created: " + data);
+                });
+            }
+        }
+
+        function getExamsList() {
+            let url = hostUrl + "getexamslist/";
+            $.get(url, (data, status) => {
+                console.log("Data: " + data.exams + " | Status: " + status);
+                $("#getExamsListResult").html("Exams List: " + data.exams);
+            });
+        }
+        function addCategory() {
+            let url = hostUrl + "addcategory/";
+            let category = $("#addCategoryTxt").val();
+            let attachTo = $("#attachCategoryTxt").val();
+            if (category !== "" && category !== undefined && attachTo !== "" && attachTo !== undefined) {
+                $.post(url, { "category": category, "attachTo": attachTo }, (data, status) => {
+                    console.log("Data: " + data + " | Status: " + status);
+                    $("#addCategoryResult").html("Category created: " + data);
+                });
+            }
+        }
+        function addSubject() {
+            let url = hostUrl + "addsubject/";
+            let subject = $("#addSubjectTxt").val();
+            let attachTo = $("#attachSubjectTxt").val();
+            if (subject !== "" && subject !== undefined && attachTo !== "" && attachTo !== undefined) {
+                $.post(url, { "subject": subject, "attachTo": attachTo }, (data, status) => {
+                    console.log("Data: " + data + " | Status: " + status);
+                    $("#addSubjectResult").html("Subject created: " + data);
+                });
+            }
+        }
+        function addTopic() {
+            let url = hostUrl + "addtopic/";
+            let topic = $("#addTopicTxt").val();
+            let attachTo = $("#attachTopicTxt").val();
+            if (topic !== "" && topic !== undefined && attachTo !== "" && attachTo !== undefined) {
+                $.post(url, { "topic": topic, "attachTo": attachTo }, (data, status) => {
+                    console.log("Data: " + data + " | Status: " + status);
+                    $("#addTopicResult").html("Topic created: " + data);
+                });
+            }
+        }
+        function getExamDetails() {
+            let url = hostUrl + "getexamdetails/";
+            let exam = $("#getExamDetailsTxt").val();
+            if (exam !== "" && exam !== undefined) {
+                $.get(url, "exam="+exam, (data, status) => {
+                    console.log("Data: " + data + " | Status: " + status);
+                    $("#getExamDetailsResult").html("Exam details: " + JSON.stringify(data));
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>
