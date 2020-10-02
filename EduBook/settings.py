@@ -19,9 +19,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '6md8*5*ah-xjc)yonf4(z0*z^l%wp5)6n7ovpzb@%)v(eu(t5o'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -50,15 +47,12 @@ WSGI_APPLICATION = 'EduBook.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    '_default':{
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'edubook',
         'USER': 'root',
-        'PASSWORD': '',
         'HOST': '127.0.0.1',
         'PORT': '3306'
     },
