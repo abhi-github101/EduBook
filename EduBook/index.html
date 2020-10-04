@@ -77,7 +77,7 @@
         <label for="getExamDetailsTxt">Exam: </label>
         <input id="getExamDetailsTxt" type="text" required>
         <button onclick="getExamDetails()">Get Exam Details</button>
-        <span>Note: Not fully implemented.</span>
+        <span>Hint: Name of Exam</span>
         <div id="getExamDetailsResult"></div>
     </div>
 
@@ -91,7 +91,8 @@
             let exam = $("#createExamTxt").val();
             if (exam !== "" && exam !== undefined) {
                 $.post(url, { 'exam': exam }, (data, status) => {
-                    console.log("Data: " + data + " | Status: " + status);
+                    console.log("Exam Created: "+exam);
+                    console.log(data);
                     $("#createExamResult").html("Exam created: " + data);
                 });
             }
@@ -100,7 +101,8 @@
         function getExamsList() {
             let url = hostUrl + "getexamslist/";
             $.get(url, (data, status) => {
-                console.log("Data: " + data.exams + " | Status: " + status);
+                console.log("Exams List: ");
+                console.log(data);
                 $("#getExamsListResult").html("Exams List: " + data.exams);
             });
         }
@@ -110,7 +112,8 @@
             let attachTo = $("#attachCategoryTxt").val();
             if (category !== "" && category !== undefined && attachTo !== "" && attachTo !== undefined) {
                 $.post(url, { "category": category, "attachTo": attachTo }, (data, status) => {
-                    console.log("Data: " + data + " | Status: " + status);
+                    console.log("Category created: " + category+" -> "+ attachTo);
+                    console.log(data);
                     $("#addCategoryResult").html("Category created: " + data);
                 });
             }
@@ -121,7 +124,8 @@
             let attachTo = $("#attachSubjectTxt").val();
             if (subject !== "" && subject !== undefined && attachTo !== "" && attachTo !== undefined) {
                 $.post(url, { "subject": subject, "attachTo": attachTo }, (data, status) => {
-                    console.log("Data: " + data + " | Status: " + status);
+                    console.log("Subject created: " + subject +" -> "+ attachTo);
+                    console.log(data);
                     $("#addSubjectResult").html("Subject created: " + data);
                 });
             }
@@ -132,7 +136,8 @@
             let attachTo = $("#attachTopicTxt").val();
             if (topic !== "" && topic !== undefined && attachTo !== "" && attachTo !== undefined) {
                 $.post(url, { "topic": topic, "attachTo": attachTo }, (data, status) => {
-                    console.log("Data: " + data + " | Status: " + status);
+                    console.log("Topic created: " + topic +" -> "+ attachTo);
+                    console.log(data);
                     $("#addTopicResult").html("Topic created: " + data);
                 });
             }
@@ -142,7 +147,8 @@
             let exam = $("#getExamDetailsTxt").val();
             if (exam !== "" && exam !== undefined) {
                 $.get(url, "exam="+exam, (data, status) => {
-                    console.log("Data: " + data + " | Status: " + status);
+                    console.log("Exam details: " + exam);
+                    console.log(data);
                     $("#getExamDetailsResult").html("Exam details: " + JSON.stringify(data));
                 });
             }

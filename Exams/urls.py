@@ -1,3 +1,39 @@
+"""
+*************
+EXAM'S ROUTES
+*************
+
+    Create exam
+    ===========
+        Route:
+            ``exams/createexam/``
+    
+    Get Exams list
+    ==============
+        Route:
+            ``exams/getexamslist/``
+    
+    Add Category
+    ============
+        Route:
+            ``exams/addcategory/``
+    
+    Add Subject
+    ===========
+        Route:
+            ``exams/addsubject/``
+    
+    Add Topic
+    =========
+        Route:
+            ``exams/addtopic/``
+    
+    Get Exam Details
+    ================
+        Route:
+            ``exams/getexamdetails/``
+"""
+
 from django.urls import path
 from . import views
 

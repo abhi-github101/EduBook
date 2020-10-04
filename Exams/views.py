@@ -10,10 +10,22 @@ from .models import Exam, Category, Subject, Topic
 def createExam(request):
     """
     Create new Exam
-    Responses:
-    HttpResponseBadRequest- If 'exam' parameter is not provided or its not of type 'string'
-    HttpResponse- 'Id' of the new Exam created, otherwise 'Exists' if exam already present
-    HttpResponseServerError- Internal Server Error
+
+        Parameters:
+        -----------
+        ``exam``
+            exam name as string
+
+        Responses:
+        ----------
+        HttpResponseBadRequest
+            If ``exam`` parameter is not provided or its not of type ``string``
+
+        HttpResponse
+            ``Id`` of the new Exam created, otherwise ``Exists`` if exam already present
+
+        HttpResponseServerError
+            Internal Server Error
     """
     
     try:
@@ -35,9 +47,15 @@ def createExam(request):
 def getExamsList(request):
     """
     Get list of all Exams present
-    Responses:
-    JsonResponse- {'exams': list}
-    HttpResponseServerError- Internal Server Error
+
+        Responses:
+        ----------
+
+        JsonResponse
+            {'exams': []}
+
+        HttpResponseServerError
+            Internal Server Error
     """
     
     try:
@@ -52,13 +70,32 @@ def getExamsList(request):
 @require_POST
 def addCategory(request):
     """
-    Add new Category, to Exam or other Category. First check Category table, then go to Exam table
-    Responses:
-    HttpResponseBadRequest- If 'category' and 'attachTo' parameter are not provided or their type is not 'string', both are required
-    HttpResponse- 'Id' of the new Category created
-    HttpResponseNotAllowed- If 'Subject' is already present, and trying to add new category
-    HttpResponseNotFound- When there's no 'attachTo' related to Category or Exam exists 
-    HttpResponseServerError- Internal Server Error
+    Add new Category, to Exam or other Category. First check Category table, then go to Exam table.
+
+        Parameters:
+        -----------
+        ``category``
+            category name as string
+
+        ``attachTo``
+            parent category or exam name as string
+
+        Responses:
+        ----------
+        HttpResponseBadRequest
+            If ``category`` and ``attachTo`` parameter are not provided or their type is not ``string``, both are **required**
+
+        HttpResponse
+            ``Id`` of the new Category created
+
+        HttpResponseNotAllowed
+            If ``Subject`` is already present, and trying to add new category
+
+        HttpResponseNotFound
+            When there's no ``attachTo`` related to Category or Exam exists 
+
+        HttpResponseServerError
+            Internal Server Error
     """
     
     try:        
@@ -92,13 +129,32 @@ def addCategory(request):
 @require_POST
 def addSubject(request):
     """
-    Add new Subject, to Exam or lowest-level Category. First check Category table, then go to Exam table
-    Responses:
-    HttpResponseBadRequest- If 'subject' and 'attachTo' parameter are not provided or their type is not 'string', both are required
-    HttpResponse- 'Id' of the new Subject created
-    HttpResponseNotAllowed- If trying to add new subject to inner level Category or Exam's with Category
-    HttpResponseNotFound- When there's no 'attachTo' related to Category or Exam exists 
-    HttpResponseServerError- Internal Server Error
+    Add new Subject, to Exam or lowest-level Category. First check Category table, then go to Exam table.
+        
+        Parameters:
+        -----------
+        ``subject``
+            subject name as string
+        
+        ``attachTo``
+            name of lowest-level category or exam with no category as string
+
+        Responses:
+        ----------
+        HttpResponseBadRequest
+            If ``subject`` and ``attachTo`` parameter are not provided or their type is not ``string``, both are **required*
+        
+        HttpResponse
+            ``Id`` of the new Subject created
+        
+        HttpResponseNotAllowed
+            If trying to add new subject to inner level Category or Exam's with Category
+        
+        HttpResponseNotFound
+            When there's no ``attachTo`` related to Category or Exam exists 
+        
+        HttpResponseServerError
+            Internal Server Error
     """
     
     try:
@@ -131,11 +187,28 @@ def addSubject(request):
 def addTopic(request):
     """
     Add new Topic, to Subject or other Topics. First check Topic table, then go to Subject table
-    Responses:
-    HttpResponseBadRequest- If 'topic' and 'attachTo' parameter are not provided or their type is not 'string', both are required
-    HttpResponse- 'Id' of the new Topic created
-    HttpResponseNotFound- When there's no 'attachTo' related to Topic or Subject exists 
-    HttpResponseServerError- Internal Server Error
+        
+        Parameters:
+        -----------
+        ``topic``
+            topic name as string
+
+        ``attachTo``
+            parent topic or subject name as string
+
+        Responses:
+        ----------
+        HttpResponseBadRequest
+            If ``topic`` and ``attachTo`` parameter are not provided or their type is not ``string``, both are required
+        
+        HttpResponse
+            ``Id`` of the new Topic created
+
+        HttpResponseNotFound
+            When there's no ``attachTo`` related to Topic or Subject exists 
+
+        HttpResponseServerError
+            Internal Server Error
     """
 
     try:
@@ -165,11 +238,25 @@ def addTopic(request):
 def getExamDetails(request):
     """
     Get all details of specified exam, details related to categories, subjects, topics.
-    Responses:
-    HttpResponseBadRequest- If 'exam' parameter is not provided or its type is not 'string'
-    JsonResponse- eg. {"exam": string, "subcategory": [], "subject": []}
-    HttpResponseNotFound- If the 'exam' doesn't exists
-    HttpResponseServerError- Internal Server Error
+        
+        Parameters:
+        -----------
+        ``exam``
+            exam name as string
+
+        Responses:
+        ----------
+        HttpResponseBadRequest
+            If ``exam`` parameter is not provided or its type is not ``string``
+
+        JsonResponse
+            {"exam": string, "subcategory": [], "subject": []}
+
+        HttpResponseNotFound
+            If the ``exam`` doesn't exists
+
+        HttpResponseServerError
+            Internal Server Error
     """
 
     try:
@@ -180,9 +267,11 @@ def getExamDetails(request):
                     examObj = Exam.objects.get(name__iexact= exam)
                     result = {"exam": examObj.name}
                     if examObj.category_set.count() > 0:
-                        result["categories"] = shakeCategoryTree(examObj.category_set.all())
+                        result["categories"] = []
+                        for cObj in examObj.category_set.all():
+                            result["categories"].append(shakeCategoryTreeR(cObj))
                     else:
-                        result["subjects"] = shakeTopicTree('E', examObj.id)
+                        result["subjects"] = getRelatedSubjects('E', examObj.id)
                     return JsonResponse(result, safe= True)
                 except:
                     return HttpResponseNotFound("Exam doesn't exists")
@@ -190,24 +279,35 @@ def getExamDetails(request):
     except:
         return HttpResponseServerError()
 
-def shakeCategoryTree(categoryObjs):
-    result = []
-    for cObj in categoryObjs:
-        catRes = {"subcategory": cObj.name}
-        catRes["subjects"] = shakeTopicTree('C', cObj.id)
-        result.append(catRes)
+def shakeCategoryTreeR(categoryObj):
+    if categoryObj.is_leaf_node():
+        result =  {"category": categoryObj.name}
+        subjects = getRelatedSubjects('C', categoryObj.id)
+        if len(subjects) > 0:
+            result["subjects"] = subjects
+        return result    
+    result = {"category": categoryObj.name, "subcategories": []}
+    for cObj in categoryObj.get_children():
+        result["subcategories"].append(shakeCategoryTreeR(cObj))
     return result
 
-def shakeTopicTree(associated_to, association_id):
+def getRelatedSubjects(associated_to, association_id):
     subjectObjs = Subject.objects.filter(associated_to= associated_to, association_id= association_id)
     result = []        
     if subjectObjs.exists():
         for sObj in subjectObjs:
-            subRes = {"subject": sObj.name}
-            topicRes = []                
+            subRes = {"subject": sObj.name}            
             if sObj.topic_set.count() > 0:                
+                subRes["topics"] = []
                 for tObj in sObj.topic_set.all():
-                    topicRes += list(tObj.get_family().values_list("name", flat=True))
-                subRes["topics"] = topicRes
+                    subRes["topics"].append(shakeTopicTreeR(tObj))                
             result.append(subRes)
+    return result
+
+def shakeTopicTreeR(topicObj):
+    if topicObj.is_leaf_node():
+        return {"topic": topicObj.name}    
+    result = {"topic": topicObj.name, "subtopics": []}
+    for tObj in topicObj.get_children():
+        result["subtopics"].append(shakeTopicTreeR(tObj))
     return result
