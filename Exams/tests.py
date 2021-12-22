@@ -3,7 +3,7 @@ from unittest import skip
 from json import loads
 from Exams.models import Exam, Category, Subject, Topic
 
-class TestExamsApp(TestCase):
+class TestExamsAPI(TestCase):
     
     def setUp(self):
         self.host = "http://127.0.0.1"
@@ -21,7 +21,7 @@ class TestExamsApp(TestCase):
         __ = "Test: Create Exam without parameters"
         with self.subTest(__, api= api):
             response = self.client.post(api)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 400)
 
         __ = "Test: Create Exam"
         exam = "IIT"
@@ -33,7 +33,7 @@ class TestExamsApp(TestCase):
         exam = "IIT"
         with self.subTest(__, api= api, exam= exam):
             response = self.client.post(api, {"exam": exam})
-            self.assertEqual(response.content.decode('utf'), "Exists")
+            self.assertEqual(response.content.decode('utf-8'), "Exists")
             
     def test_2_getExamsList(self):
         api = self.url+"exams/getexamslist/"
@@ -73,7 +73,7 @@ class TestExamsApp(TestCase):
         __ = "Test: Add category without parameters"
         with self.subTest(__, api= api):
             response = self.client.post(api)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 400)
         
         __ = "Test: Add category to exam"
         exam = Exam.objects.create(name="CAT")
@@ -120,12 +120,9 @@ class TestExamsApp(TestCase):
             self.assertEqual(response.status_code, 405)
 
         __ = "Test: Add category to another category with subject"
-        # CAT (E) -> Aptitude (C) -> Statistics (C)
-        # CAT (E) -> Aptitude (C) -> Probability (C)
-        c= Category.objects.get(name= "Statistics")
+        c = Category.objects.get(name= "Statistics")
         Subject.objects.create(name="3M", associated_to= 'C', association_id= c.id)
         # CAT (E) -> Aptitude (C) -> Statistics (C) -> 3M (S)
-        # CAT (E) -> Aptitude (C) -> Probability (C)
         attachTo = c.name
         category = "Data Models"
         with self.subTest(__, api= api, attachTo= attachTo, category= category):
@@ -143,7 +140,7 @@ class TestExamsApp(TestCase):
         __ = "Test: Add subject without parameters"
         with self.subTest(__, api= api):
             response = self.client.post(api)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 400)
         
         __ = "Test: Add subject under exam"
         exam = Exam.objects.create(name= "IIT")
@@ -204,7 +201,7 @@ class TestExamsApp(TestCase):
         __ = "Test: Add topic without parameters"
         with self.subTest(__, api= api):
             response = self.client.post(api)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 400)
         
         __ = "Test: Add topic under subject"
         exam = Exam.objects.create(name= "IIT")
@@ -241,7 +238,105 @@ class TestExamsApp(TestCase):
         with self.subTest(__, api= api, attachTo= attachTo, topic= topic):
             response = self.client.post(api, {"topic": topic, "attachTo": attachTo})
             self.assertEqual(response.status_code, 404)
-
-    @skip("Working")
+    
     def test_4_getExamDetails(self):
-        pass
+        api = self.url+"exams/getexamdetails/"
+        
+        __ = "Test: Accept only GET methods"
+        with self.subTest(__, api=api):
+            response = self.client.post(api)
+            self.assertEqual(response.status_code, 405)
+        
+        __ = "Test: Get Exam details without parameters"
+        with self.subTest(__, api= api):
+            response = self.client.get(api)
+            self.assertEqual(response.status_code, 400)
+        
+        __ = "Test: Get Exam details of unknown"
+        with self.subTest(__, api= api):
+            response = self.client.get(api, {"exam":"IIT"})
+            self.assertEqual(response.status_code, 404)
+        
+        __ = "Test: Get Exam details with no subcategory & subject"
+        exam = Exam.objects.create(name= "IIT")
+        # IIT (E)
+        with self.subTest(__, api= api, exam= exam):
+            response = self.client.get(api, {"exam": exam.name})
+            self.assertEqual(loads(response.content.decode('utf-8')), {"exam": "IIT", "subjects":[]})
+
+        __ = "Test: Get Exam details with subjects and topics"
+        # IIT (E)
+        subject = Subject.objects.create(name= "Physics", associated_to= 'E', association_id= exam.id)
+        # IIT (E) -> Physics (S)
+        topic = Topic.objects.create(name="Wave Optics", subject= subject)
+        # IIT (E) -> Physics (S) -> Wave Optics (T)
+        Topic.objects.create(name="Reflection", parent= topic)
+        # IIT (E) -> Physics (S) -> Wave Optics (T) -> Reflection (T)        
+        Topic.objects.create(name="Refraction", parent= topic)
+        # IIT (E) -> Physics (S) -> Wave Optics (T) -> Refraction (T)        
+        Subject.objects.create(name= "Chemistry", associated_to= 'E', association_id= exam.id)
+        # IIT (E) -> Chemistry (S)
+        with self.subTest(__, api= api, exam = exam):
+            response = self.client.get(api, {"exam": exam.name})
+            expectedResult = {
+                "exam":"IIT",
+                "subjects":[
+                    {
+                        "subject":"Physics",
+                        "topics":[
+                            {
+                                "topic": "Wave Optics", 
+                                "subtopics":[
+                                    {"topic": "Reflection"},
+                                    {"topic": "Refraction"}
+                                    ]
+                            }]
+                    },
+                    {
+                        "subject":"Chemistry"
+                    }
+                    ]
+                }
+            self.assertEqual(loads(response.content.decode('utf-8')), expectedResult)
+
+        __ = "Test: Get Exam details with subcategory, subjects and topics"
+        exam = Exam.objects.create(name= "GATE")
+        # GATE (E)
+        category = Category.objects.create(name= "Computer Science", exam= exam)
+        # GATE (E) -> Computer Science (C)        
+        subject = Subject.objects.create(name= "Database", associated_to= 'C', association_id= category.id)
+        # GATE (E) -> Computer Science (C) -> Database (S)
+        Topic.objects.create(name="RDBMS", subject= subject)
+        # GATE (E) -> Computer Science (C) -> Database (S) -> RDBMS (T)
+        Topic.objects.create(name="NoSQL", subject= subject)
+        # GATE (E) -> Computer Science (C) -> Database (S) -> NoSQL (T)      
+        subject = Subject.objects.create(name= "Operating System", associated_to= 'C', association_id= category.id)
+        # GATE (E) -> Computer Science (C) -> Operating System (S)
+        Topic.objects.create(name="Process", subject= subject)
+        # GATE (E) -> Computer Science (C) -> Operating System (S) -> Process (T)
+        with self.subTest(__, api= api, exam = exam):
+            response = self.client.get(api, {"exam": exam.name})
+            expectedResult = {                
+                "exam":"GATE",
+                "categories": [
+                    {
+                    "category": "Computer Science",
+                    "subjects": [
+                        {
+                            "subject": "Database",
+                            "topics":[                                                    
+                                    {"topic": "NoSQL"},
+                                    {"topic": "RDBMS"}
+                                ]                                
+                        },
+                        {
+                            "subject":"Operating System",
+                            "topics": [
+                                {"topic": "Process"}
+                            ]
+                        }                                                
+                    ]
+                    }
+                ]                     
+                }
+            self.assertEqual(loads(response.content.decode('utf-8')), expectedResult)

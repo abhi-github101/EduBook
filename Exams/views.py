@@ -29,7 +29,7 @@ def createExam(request):
     """
     
     try:
-        if request.POST["exam"]:
+        if "exam" in request.POST:
             exam = request.POST["exam"]
             if isinstance(exam, str):
                 try:
@@ -99,7 +99,7 @@ def addCategory(request):
     """
     
     try:        
-        if request.POST["category"] and request.POST["attachTo"]:
+        if "category" in request.POST and "attachTo" in request.POST:
             newCategory = request.POST["category"]
             attachTo = request.POST["attachTo"]
             if isinstance(newCategory, str) and isinstance(attachTo, str):
@@ -158,7 +158,7 @@ def addSubject(request):
     """
     
     try:
-        if request.POST["subject"] and request.POST["attachTo"]:
+        if "subject" in request.POST and "attachTo" in request.POST:
             newSubject = request.POST["subject"]
             attachTo = request.POST["attachTo"]
             if isinstance(newSubject, str) and isinstance(attachTo, str):
@@ -212,7 +212,7 @@ def addTopic(request):
     """
 
     try:
-        if request.POST["topic"] and request.POST["attachTo"]:
+        if "topic" in request.POST and "attachTo" in request.POST:
             newTopic = request.POST["topic"]
             attachTo = request.POST["attachTo"]
             if isinstance(newTopic, str) and isinstance(attachTo, str):
@@ -260,7 +260,7 @@ def getExamDetails(request):
     """
 
     try:
-        if request.GET["exam"]:
+        if "exam" in request.GET:
             exam = request.GET["exam"]
             if isinstance(exam, str):
                 try:
@@ -269,45 +269,12 @@ def getExamDetails(request):
                     if examObj.category_set.count() > 0:
                         result["categories"] = []
                         for cObj in examObj.category_set.all():
-                            result["categories"].append(shakeCategoryTreeR(cObj))
+                            result["categories"].append(cObj.shakeCategoryTree())
                     else:
-                        result["subjects"] = getRelatedSubjects('E', examObj.id)
+                        result["subjects"] = examObj.getRelatedSubjects()
                     return JsonResponse(result, safe= True)
                 except:
                     return HttpResponseNotFound("Exam doesn't exists")
         return HttpResponseBadRequest()
     except:
         return HttpResponseServerError()
-
-def shakeCategoryTreeR(categoryObj):
-    if categoryObj.is_leaf_node():
-        result =  {"category": categoryObj.name}
-        subjects = getRelatedSubjects('C', categoryObj.id)
-        if len(subjects) > 0:
-            result["subjects"] = subjects
-        return result    
-    result = {"category": categoryObj.name, "subcategories": []}
-    for cObj in categoryObj.get_children():
-        result["subcategories"].append(shakeCategoryTreeR(cObj))
-    return result
-
-def getRelatedSubjects(associated_to, association_id):
-    subjectObjs = Subject.objects.filter(associated_to= associated_to, association_id= association_id)
-    result = []        
-    if subjectObjs.exists():
-        for sObj in subjectObjs:
-            subRes = {"subject": sObj.name}            
-            if sObj.topic_set.count() > 0:                
-                subRes["topics"] = []
-                for tObj in sObj.topic_set.all():
-                    subRes["topics"].append(shakeTopicTreeR(tObj))                
-            result.append(subRes)
-    return result
-
-def shakeTopicTreeR(topicObj):
-    if topicObj.is_leaf_node():
-        return {"topic": topicObj.name}    
-    result = {"topic": topicObj.name, "subtopics": []}
-    for tObj in topicObj.get_children():
-        result["subtopics"].append(shakeTopicTreeR(tObj))
-    return result

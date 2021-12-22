@@ -20,6 +20,15 @@ class Exam(models.Model):
     class Meta:
         db_table = "exam"
 
+    def getRelatedSubjects(self):
+        result = []            
+        subjectObjs = Subject.objects.filter(associated_to='E', association_id=self.id)
+        if subjectObjs.exists():
+            for sObj in subjectObjs:
+                result.append(sObj.getRelatedTopics())
+        return result
+            
+
 class Category(MPTTModel):
     """
     Model for Category. Support for Hierarchical structure using MPTT model.
@@ -46,6 +55,21 @@ class Category(MPTTModel):
     class Meta:
         db_table = "category"
 
+    def shakeCategoryTree(self):
+        result =  {"category": self.name}            
+        if self.is_leaf_node():
+            subjectObjs = Subject.objects.filter(associated_to='C', association_id=self.id)
+            if subjectObjs.exists():
+                result["subjects"] = []
+                for sObj in subjectObjs:
+                    result["subjects"].append(sObj.getRelatedTopics())
+            return result    
+        result["subcategories"] = []
+        for cObj in self.get_children():
+            result["subcategories"].append(cObj.shakeCategoryTree())
+        return result
+
+
 class Subject(models.Model):
     """
     Model for Subject
@@ -69,6 +93,14 @@ class Subject(models.Model):
     
     class Meta:
         db_table = "subject"
+
+    def getRelatedTopics(self):
+        subRes = {"subject": self.name}            
+        if self.topic_set.count() > 0:                
+            subRes["topics"] = []
+            for tObj in self.topic_set.all():
+                subRes["topics"].append(tObj.shakeTopicTree())                
+        return subRes
 
 class Topic(MPTTModel):
     """
@@ -96,3 +128,11 @@ class Topic(MPTTModel):
     class Meta:
         db_table = "topic"
 
+    def shakeTopicTree(self):
+        result = {"topic": self.name}
+        if self.is_leaf_node():
+            return result
+        result["subtopics"] = []
+        for tObj in self.get_children():
+            result["subtopics"].append(tObj.shakeTopicTree())
+        return result
